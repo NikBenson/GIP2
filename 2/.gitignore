@@ -31,5 +31,6 @@
 *.out
 *.app
 
-# Assignments
-gip2_nik_benson_p*.zip
+
+.idea/
+cmake-build-debug

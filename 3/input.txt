@@ -1,0 +1,5 @@
+2
+AAA
+BBB
+AAA 1 0 BBB
+BBB 2 0 AAA

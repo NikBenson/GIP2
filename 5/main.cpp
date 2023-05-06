@@ -6,33 +6,31 @@
 
 
 int main() {
-    /*std::vector<std::vector<labyrinth::Field*>> labyrinthIn;
-    std::vector<std::vector<labyrinth::Field*>> labyrinthOut;
+    std::vector<std::vector<labyrinth::Field *>> labyrinthIn;
 
     std::cin >> labyrinthIn;
 
-    std::stringstream str;
-    str << labyrinthIn;
-    str >> labyrinthOut;
+    auto *labyrinth = new graph::Graph<labyrinth::Field>();
 
-    std::cout << labyrinthOut;*/
+    for (unsigned int height = labyrinthIn.size(), y = 0; y < height; ++y) {
+        for (unsigned int width = labyrinthIn[y].size(), x = 0; x < width; ++x) {
+            labyrinth::Field *field = labyrinthIn[y][x];
+            if (field->IsClear()) {
+                std::stringstream name_stream;
+                name_stream << "n_" << x << "_" << y;
+                std::string name = name_stream.str();
+                auto *n = new graph::node::Node<labyrinth::Field>(name, *field, {(int) x, (int) y});
 
-    auto* graph = new Graph();
+                labyrinth->Add(*n);
 
-    std::string test123_name = "Test123";
-    auto* test123_node = new Graph::Node(test123_name, {0, 0});
-    unsigned int test123_id = graph->add(*test123_node);
-    std::string test456_name = "Test456";
-    auto* test456_node = new Graph::Node(test456_name, {1, 0});
-    unsigned int test456_id = graph->add(*test456_node);
-    std::string test789_name = "Test789";
-    auto* test789_node = new Graph::Node(test789_name, {0, 1});
-    unsigned int test789_id = graph->add(*test789_node);
+                for (const auto &other: labyrinth->GetNodes())
+                    if (n->GetPosition().distance(other.GetPosition()) == 1)
+                        labyrinth->UpdateWeight(*n, other, 1.0, true);
+            }
+        }
+    }
 
-    graph->update_weight(test123_id, test456_id, 1.0, true);
-    graph->update_weight(test123_id, test789_id, 2.0, true);
-
-    std::cout << *graph;
+    std::cout << *labyrinth;
 
     return 0;
 }

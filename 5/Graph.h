@@ -22,12 +22,12 @@ namespace graph {
         using Node = node::Node<Value>;
 
     private:
-        std::vector<Node&> nodes_;
+        std::vector<Node> nodes_;
         std::vector<std::vector<float>> adjacent_;
         unsigned int adjacent_size_ = 0;
 
     public:
-        std::vector<Node&> GetNodes();
+        std::vector<Node> GetNodes();
 
         void UpdateAdjacentSize();
 
@@ -148,8 +148,10 @@ namespace graph {
     }
 
     template<typename Value>
-    std::vector<node::Node<Value>&> Graph<Value>::GetNodes() {
-        return std::copy(nodes_.begin(), nodes_.end());
+    std::vector<node::Node<Value>> Graph<Value>::GetNodes() {
+        std::vector<node::Node<Value>> result;
+        std::copy(nodes_.begin(), nodes_.end(), std::back_inserter(result));
+        return result;
     }
 
     template<typename Value>

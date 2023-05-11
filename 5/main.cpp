@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
-#include <map>
 #include <list>
 #include "Field.h"
 #include "Graph.h"
@@ -21,7 +20,7 @@ int main() {
                 std::stringstream name_stream;
                 name_stream << "n_" << x << "_" << y;
                 std::string name = name_stream.str();
-                auto *n = new graph::node::Node<labyrinth::Field>(name, *field, {(int) x, (int) y});
+                const auto *n = new graph::node::Node<labyrinth::Field>(name, *field, {(int) x, (int) y});
 
                 labyrinth->Add(*n);
 

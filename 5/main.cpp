@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <map>
+#include <list>
 #include "Field.h"
 #include "Graph.h"
 

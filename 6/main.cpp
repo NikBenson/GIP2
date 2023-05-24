@@ -3,11 +3,87 @@
 #include <sstream>
 #include <map>
 #include <list>
+#include <iomanip>
+#include <unordered_map>
 #include "Field.h"
 #include "Graph.h"
 
 
-int main() {
+typedef struct RoutingTableEntry {
+    const graph::node::Node<labyrinth::Field> *prev = nullptr;
+    float weight = -1;
+
+    friend std::ostream &operator<<(std::ostream &os, const RoutingTableEntry &entry);
+} RoutingTableEntry;
+
+namespace std {
+    template<typename T>
+    struct hash<graph::node::Node<T>> {
+        size_t operator()(const graph::node::Node<T> &node) const {
+            // Define the logic to generate a hash value for the Node<T> object
+            // For example, you can use std::hash on the name of the node
+            return std::hash<std::string>{}(node.GetName());
+        }
+    };
+
+    template<typename T>
+    struct equal_to<graph::node::Node<T>> {
+        bool operator()(const graph::node::Node<T> &lhs, const graph::node::Node<T> &rhs) const {
+            return lhs == rhs;
+        }
+    };
+}
+
+typedef std::unordered_map<graph::node::Node<labyrinth::Field>, RoutingTableEntry, std::hash<graph::node::Node<labyrinth::Field>>, std::equal_to<>> RoutingTable;
+
+std::ostream &operator<<(std::ostream &os, const RoutingTableEntry &entry) {
+    os << entry.weight << " " << std::setw(20);
+
+    if (entry.prev == nullptr)
+        os << "-";
+    else
+        os << entry.prev->GetName();
+
+    return os;
+}
+
+std::ostream &
+operator<<(std::ostream &os, const std::pair<graph::node::Node<labyrinth::Field>, RoutingTableEntry> &entry) {
+    return os << entry.first.GetName() << " " << std::setw(15) << entry.second;
+}
+
+std::ostream &
+operator<<(std::ostream &os, const RoutingTable &table) {
+    for (auto &entry: table) {
+        os << entry << std::endl;
+    }
+
+    return os;
+}
+
+const graph::node::Node<labyrinth::Field> &
+next_to_visit(RoutingTable &routingTable, std::list<graph::node::Node<labyrinth::Field>> &unvisitedNodes) {
+    const graph::node::Node<labyrinth::Field> *min = nullptr;
+    float min_weight = graph::Graph<labyrinth::Field>::NOT_CONNECTED;
+    for (auto &current: unvisitedNodes) {
+        if(!routingTable.contains(current))
+            continue;
+
+        auto &entry = routingTable[current];
+        if (entry.weight < min_weight) {
+            min = &current;
+            min_weight = entry.weight;
+        }
+    }
+
+    if (min == nullptr) {
+        throw std::invalid_argument("Empty routing table has no nearest node");
+    }
+
+    return *min;
+}
+
+int main(const int argc, const char *argv[]) {
     std::vector<std::vector<labyrinth::Field *>> labyrinthIn;
 
     std::cin >> labyrinthIn;
@@ -21,7 +97,7 @@ int main() {
                 std::stringstream name_stream;
                 name_stream << "n_" << x << "_" << y;
                 std::string name = name_stream.str();
-                auto *n = new graph::node::Node<labyrinth::Field>(name, *field, {(int) x, (int) y});
+                const auto *n = new graph::node::Node<labyrinth::Field>(name, *field, {(int) x, (int) y});
 
                 labyrinth->Add(*n);
 
@@ -32,29 +108,43 @@ int main() {
         }
     }
 
-    std::cout << *labyrinth;
+    std::cout << *labyrinth << std::endl << std::endl;
 
-    graph::node::Node<labyrinth::Field> current = labyrinth->NodeAt(0);
+    RoutingTable routingTable;
+    auto nodes = labyrinth->GetNodes();
+    auto nodeBegin = nodes.begin();
+    auto nodeEnd = nodes.end();
+    auto unvisitedNodes = std::list<graph::node::Node<labyrinth::Field>>(nodeBegin, nodeEnd);
 
-    typedef struct RoutingTableEntry {
-        graph::node::Node<labyrinth::Field>* next = nullptr;
-        float weight = -1;
-    } RoutingTableEntry;
+    if (argc != 2)
+        throw std::invalid_argument("Please provide exactly one argument!");
+    std::string subject_name = argv[1];
+    auto subject_iterator = std::find_if(unvisitedNodes.begin(), unvisitedNodes.end(),
+                                         [&subject_name](graph::node::Node<labyrinth::Field> &node) {
+                                             return node.GetName() == subject_name;
+                                         });
+    if (subject_iterator == unvisitedNodes.end())
+        throw std::invalid_argument("Not a valid name!");
+    graph::node::Node<labyrinth::Field> &subject = *subject_iterator;
 
-    std::list<graph::node::Node<labyrinth::Field>> unvisitedNodes = new std::list(labyrinth->GetNodes());
-    unvisitedNodes.remove(current);
 
-    std::map<graph::node::Node<labyrinth::Field>, RoutingTableEntry> routingTable;
-    routingTable[current] = {&current, 0};
+    routingTable.insert(std::make_pair(subject, RoutingTableEntry{nullptr, 0}));
 
-    while(!unvisitedNodes.empty()) {
+    while (!unvisitedNodes.empty()) {
+        auto current = next_to_visit(routingTable, unvisitedNodes);
+        unvisitedNodes.remove(current);
 
+        float current_distance = routingTable[current].weight;
+
+        for(auto& neighbor : labyrinth->GetNeighbors(current)) {
+            float neighbor_distance = current_distance + labyrinth->WeightBetween(current, neighbor);
+            if((!routingTable.contains(neighbor)) || neighbor_distance < routingTable[neighbor].weight) {
+                routingTable[neighbor] = RoutingTableEntry {new graph::node::Node<labyrinth::Field>(current.GetName(), current.GetValue(), current.GetPosition()), neighbor_distance};
+            }
+        }
     }
 
-    std::cout << "Routing table for " << current.GetName() << ":";
-    for(auto& entry : routingTable) {
-        std::cout << entry.first.GetName() << " <- " << entry.second.next << " (" << entry.second.weight << ")";
-    }
+    std::cout << "Routing table for " << subject_name << ":" << std::endl << routingTable;
 
     return 0;
 }

@@ -40,9 +40,22 @@ namespace graph::node {
 
         bool operator==(const Node<Value> &other) const;
 
+        Node &operator=(const Node &other);
+
         template<typename T>
         friend std::ostream &operator<<(std::ostream &os, const Node<T> &node);
     };
+
+    template<typename Value>
+    Node<Value> &Node<Value>::operator=(const Node &other) {
+        if (this != &other) {
+            //name_ = other.name_;
+            //value_ = other.value_;
+            //position_ = other.position_;
+        }
+
+        return *this;
+    }
 
     inline int Position::distance(const struct Position &other) const {
         return abs(x - other.x) + abs(y - other.y);

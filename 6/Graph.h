@@ -22,12 +22,12 @@ namespace graph {
         using Node = node::Node<Value>;
 
     private:
-        std::vector<Node&> nodes_;
+        std::vector<Node> nodes_;
         std::vector<std::vector<float>> adjacent_;
         unsigned int adjacent_size_ = 0;
 
     public:
-        std::vector<Node&> GetNodes();
+        std::vector<Node> GetNodes();
 
         void UpdateAdjacentSize();
 
@@ -52,6 +52,10 @@ namespace graph {
         float UpdateWeight(unsigned int from_id, unsigned int to_id, float weight, bool bidirectional);
 
         float UpdateWeight(const Node &from, const Node &to, float weight, bool bidirectional);
+
+        std::vector<Node> GetNeighbors(unsigned int id);
+
+        std::vector<Node> GetNeighbors(const Node &node);
 
         template<typename T>
         friend std::ostream &operator<<(std::ostream &os, Graph<T> &graph);
@@ -148,8 +152,29 @@ namespace graph {
     }
 
     template<typename Value>
-    std::vector<node::Node<Value>&> Graph<Value>::GetNodes() {
-        return std::copy(nodes_.begin(), nodes_.end());
+    std::vector<node::Node<Value>> Graph<Value>::GetNodes() {
+        std::vector<node::Node<Value>> result;
+        std::copy(nodes_.begin(), nodes_.end(), std::back_inserter(result));
+        return result;
+    }
+
+    template<typename Value>
+    std::vector<graph::node::Node<Value>> Graph<Value>::GetNeighbors(const graph::node::Node<Value> &node) {
+        return GetNeighbors(IdOf(node));
+    }
+
+    template<typename Value>
+    std::vector<graph::node::Node<Value>> Graph<Value>::GetNeighbors(unsigned int id) {
+        UpdateAdjacentSize();
+
+        auto neighbors = std::vector<graph::node::Node<Value>>();
+        for (unsigned int other_id = 0; float weight: adjacent_[id]) {
+            if (other_id != id && weight != NOT_CONNECTED)
+                neighbors.push_back(NodeAt(other_id));
+            other_id++;
+        }
+
+        return neighbors;
     }
 
     template<typename Value>
